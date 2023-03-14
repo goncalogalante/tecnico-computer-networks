@@ -68,10 +68,7 @@ Conteudo new_conteudo;
 strcpy(new_conteudo.name, nome_conteudo); 
 no->conteudos[no->num_conteudos] = new_conteudo;
 no->num_conteudos++;
-printf("Contents of the node:\n");
-    for (int i = 0; i < no->num_conteudos; i++) {
-        printf("%s \n", no->conteudos[i].name);
-    }
+
 }
 
 // function to delete a content name for the node
@@ -89,13 +86,17 @@ void delete(char *nome_conteudo, No *no)
         }
     }
     printf(" >> Error: Content not found.\n");
-
-    printf("Contents of the node:\n");
-    for (int i = 0; i < no->num_conteudos; i++) {
-        printf("%s \n", no->conteudos[i].name);
-    }
 }
 
+// function to show the names of contents in the node
+void show_names(No *no)
+{
+    printf("\n-----Contents of the node:-----\n");
+    for (int i = 0; i < no->num_conteudos; i++) {
+        printf("%s\n", no->conteudos[i].name);
+    }
+    printf("-----End of contents-----\n");
+}
 
 
 typedef struct me me_node;
@@ -213,6 +214,8 @@ int main(int argc, char *argv[]) {
 
         if (strcmp(first_word, "sn") == 0) {
             printf("Command selected: %s\n", first_word);
+            No no;
+            show_names(&no);
         }
 
         if (strcmp(first_word, "sr") == 0) {
