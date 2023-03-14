@@ -84,8 +84,9 @@ void delete(char *nome_conteudo, No *no)
             no->num_conteudos--; 
             printf("Content removed.\n");
         }
+
     }
-    printf(" >> Error: Content not found.\n");
+
 }
 
 // function to show the names of contents in the node
