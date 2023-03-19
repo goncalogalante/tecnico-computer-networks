@@ -245,3 +245,5 @@ int main(int argc, char *argv[]) {
     }
 
 
+//se id = bck nó amarelo
+//
