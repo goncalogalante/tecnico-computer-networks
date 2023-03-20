@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -51,10 +50,12 @@ typedef struct me{
 } No;
 
 
-// declare functions
+/*declare functions*/
 
-//djon function
-int djoin(No *new_node, int id, int port, char *ip);
-
-// tcp server socket
 int tcp_socket(No *new_node);
+
+int create_tree(No *new_node);
+
+int djoin(No *new_node, char *net, char *id, char *id_boot, char *ip_boot, char *port_boot);
+
+
