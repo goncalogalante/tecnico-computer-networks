@@ -13,6 +13,10 @@
 #include <ctype.h>
 #include "functions.h"
 
+/* NÃO ESQUECER!!!!!!!!!!!!!!!!
+
+1) DJOIN COM MAIS QUE UM NÓ (SELECT)
+2) INTR E MECANISMOS*/
 
 // auxiliar functions:
 
@@ -78,10 +82,10 @@ void show_names(No *no)
 // function to present the menu
 int menu(char *input, No *me_ptr)
 {
-    char ip[64]; // ip addressto connect
-    char port[6]; // port to connect
-    char id[3]; // id to connect
-
+    char id[3]; // node id to connect
+    char ip[64]; // node ip address to connect
+    char port[6]; // node port to connect
+    
 
 
         printf("\n>> Command input: ");
@@ -107,6 +111,7 @@ int menu(char *input, No *me_ptr)
             // verify if NET is NUll or different than 3 digits
             if (net_number == NULL || strlen(net_number) != 3) { 
                 printf(">> Error: Invalid NET.\n");
+                exit(0);
             }
             else {
 
@@ -125,6 +130,7 @@ int menu(char *input, No *me_ptr)
                     // verify conditions for NET number
                     if (net_aux < 0 || net_aux > 999) {
                         printf(">> Error: Invalid NET.\n");
+                        exit(0);
                     }
                     else
                     {
@@ -145,6 +151,7 @@ int menu(char *input, No *me_ptr)
             // verify if ID digited nºs is NUll or different than 3 digits
             if (id_number == NULL || strlen(id_number) != 2) { 
                 printf(">> Error: Invalid ID.\n");
+                exit(0);
             }
 
             else {
@@ -152,7 +159,8 @@ int menu(char *input, No *me_ptr)
                 // verify if the ID digit string is an integer value
                 for (int i = 0; i < strlen(id_number); i++) {
                 if (!isdigit(id_number[i])) {
-                    printf(">> Error: Invalid NET.\n");
+                    printf(">> Error: Invalid IET.\n");
+                    exit(0);
                     break;
                 }
                 else{
@@ -160,9 +168,11 @@ int menu(char *input, No *me_ptr)
                     // convert string to integer variable 
                     int id_aux;
                     id_aux= atoi(id_number);
+                    
                     // verify conditions for ID number
                     if (id_aux < 0 || id_aux > 99) {
-                        printf(">> Error: Invalid NET.\n");
+                        printf(">> Error: Invalid ID.\n");
+                        exit(0);
                     }
 
                     // ID update for the node structure
@@ -178,31 +188,64 @@ int menu(char *input, No *me_ptr)
 
             // BOOTID verification
             char *bootid = strtok(NULL," ");
-            if (bootid == NULL) { 
+            if (bootid == NULL || strlen(bootid) != 2) { 
                 printf(">> Error: Invalid bootID.\n");
+                exit(0);
             }
-            else
-            {
-                strcpy(id, bootid);
-                is_valid = 3;
-            }
+
+            else {
+
+                // verify if the ID digit string is an integer value
+                for (int i = 0; i < strlen(bootid); i++) {
+                if (!isdigit(bootid[i])) {
+                    printf(">> Error: Invalid bootID.\n");
+                    exit(0);
+                    break;
+                }
+                else{
+                    
+                    // convert string to integer variable 
+                    int bootid_aux;
+                    bootid_aux= atoi(bootid);
+                    // verify conditions for ID number
+                    if (bootid_aux < 0 || bootid_aux > 99) {
+                        printf(">> Error: Invalid bootID.\n");
+                        exit(0);
+                    }
+
+                    // ID update for the node structure
+                    strcpy(id, bootid);
+                    is_valid = 3;
+                
+                }
+    
+             }
+
+
+            } 
 
             // BOOTIP verification
             char *bootIP = strtok(NULL," ");
             if (bootIP == NULL) { 
                 printf(">> Error: Invalid bootIP.\n");
+                exit(0);
             }
             else
             {
                 strcpy(ip, bootIP);
                 is_valid = 4;
             }
+
+
     
             // BOOTTPC verification
             char *bootTCP = strtok(NULL," ");
-            if (bootTCP == NULL) { 
-                printf(">> Error: Invalid bootTCP.\n");
-            }
+
+            if (bootTCP == NULL || atoi(bootTCP) < 0 || atoi(bootTCP) > 65535) 
+             {
+            printf("\n > Warning: Invalid bootTCP.\n");
+            exit(0);
+             }
             else
             {
                 strcpy(port, bootTCP);
@@ -216,8 +259,17 @@ int menu(char *input, No *me_ptr)
                 printf("Node ID: %s | Node NET: %s\n", me_ptr->id, me_ptr->my_net);
                 printf("bootid: %s | bootIP: %s | bootTCP: %s\n", id, ip,port );
                 printf("-------------------------------------------------\n");
+
+
+                if (strcmp(id, me_ptr->id) == 0)
+                {
+                    create_tree(me_ptr);
+
+                }
+                else{
                 create_tree(me_ptr);
                 djoin(me_ptr, me_ptr->my_net, me_ptr->id, id, ip, port);
+                }
             }
          }
 
@@ -231,8 +283,7 @@ int menu(char *input, No *me_ptr)
             if (content_name == NULL) { 
                 printf(">> Error: Not a valid content.\n");
             } else {
-            No no;
-            create(content_name, &no); // passa o nome do conteúdo e o ponteiro para a estrutura No para a função create()
+            create(content_name, me_ptr); // passa o nome do conteúdo e o ponteiro para a estrutura No para a função create()
             }
 
         }
@@ -246,8 +297,7 @@ int menu(char *input, No *me_ptr)
                 printf(">> Error: Not a valid content.\n");
             }
             else {
-            No no;
-            delete(content_name, &no); // passa o nome do conteúdo e o ponteiro para a estrutura No para a função create()
+            delete(content_name, me_ptr); // passa o nome do conteúdo e o ponteiro para a estrutura No para a função create()
             }
         }
 
@@ -258,13 +308,12 @@ int menu(char *input, No *me_ptr)
 
         /*------- SHOW TOPOLOGY --------*/
         if (strcmp(first_word, "st") == 0) {
-            
+            show(me_ptr);
         }
 
         /*------- SHOW NAMES --------*/
         if (strcmp(first_word, "sn") == 0) {
-            No no;
-            show_names(&no);
+            show_names(me_ptr);
         }
 
         /*------- SHOW ROUTING --------*/
@@ -286,12 +335,7 @@ int menu(char *input, No *me_ptr)
 }
 
 
-
 /*--------------------------------------------*/
-
-
-typedef struct me me_node;
-me_node me_ptr;
 
 int main(int argc, char *argv[]) {
 
@@ -301,6 +345,15 @@ int main(int argc, char *argv[]) {
     // create a user input variable
     char input[150];
 
+
+    No ext_node, new_node, bck_node;
+    memset(&ext_node,0,sizeof(No));
+	memset(&new_node,0,sizeof(No));
+	memset(&bck_node,0,sizeof(No));
+
+    me_ptr.ext_node = &ext_node;
+	me_ptr.bck_node = &bck_node;
+
     // allocate memory for the intr array
     //int num_intr = 4;
     //my_node.intr = malloc(num_intr * sizeof(int));
@@ -308,13 +361,9 @@ int main(int argc, char *argv[]) {
         // error handling
     //}
 
-    // allocate the structure strings
-    //me_ptr.ip=malloc(250);
-    //me_ptr.ip_nodeserver=malloc(250);
-
+    
 
     // verify the number of arguments
-
     if (argc != 5) {
         printf("Usage: ./cot IP TCP regIP regUDP");
     }

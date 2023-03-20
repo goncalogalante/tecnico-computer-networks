@@ -66,11 +66,29 @@ int tcp_socket(No *new_node)
 // create tree   ->  if (utilizado quando djoin id ip port = id ip port da estrutura)
 int create_tree(No *new_node)
 {
-	
-    printf("Creating a tree\n");
+
     tcp_socket(new_node);
 
-    // TO IMPLEMENT
+	strcpy(new_node->ext_node->id, new_node->id);
+	strcpy(new_node->bck_node->id, new_node->id);
+
+	strcpy(new_node->ext_node->port, new_node->port);
+	strcpy(new_node->bck_node->port, new_node->port);
+
+	strcpy(new_node->ext_node->ip, new_node->ip);
+	strcpy(new_node->bck_node->ip, new_node->ip);
+
+
+	new_node->ext_node->listen_tcp_res = new_node->listen_tcp_res;
+	new_node->bck_node->listen_tcp_res = new_node->listen_tcp_res;
+
+	new_node->ext_node->listen_tcp_fd = new_node->listen_tcp_fd;
+	new_node->bck_node->listen_tcp_fd = new_node->listen_tcp_fd;
+
+	printf("Node initialized.\n");
+
+	return 0;
+	
 }
 
 
@@ -125,3 +143,38 @@ int djoin(No *new_node, char *net, char *id, char*id_boot, char *ip_boot, char *
 
 return 0;
 }
+
+// show 
+void show(No *new_node)
+{
+
+	
+	/*new_node->intr = malloc(sizeof(char*) * 10); // allocate an initial capacity for the array of strings
+	new_node->num_intr = 0; // initialize the number of elements to 0
+
+	char *new_str = "05"; // the new string to add
+	int new_size = (new_node->num_intr + 1) * sizeof(char*); // the new size of the array of strings
+	new_node->intr = realloc(new_node->intr, new_size); // increase the size of the array
+	new_node->intr[new_node->num_intr] = malloc(strlen(new_str) + 1); // allocate memory for the new string
+	strcpy(new_node->intr[new_node->num_intr], new_str); // copy the new string into the array
+	new_node->num_intr++; // increase the number of elements in the array*/
+
+
+	printf("\text\t\tNode\t\tbck\t");
+	printf("\n");
+
+	printf("id\t%s\t\t%s\t\t%s", new_node->ext_node->id, new_node->id, new_node->bck_node->id);
+	printf("\n");
+
+	printf("ip\t%s\t%s\t%s", new_node->ext_node->ip, new_node->ip, new_node->bck_node->ip);
+	printf("\n");
+
+	printf("port\t%s\t\t%s\t\t%s", new_node->ext_node->port, new_node->port, new_node->bck_node->port);
+	printf("\n");
+
+	//for (int i = 0; i < new_node->num_intr; i++) {
+    //printf("\nintr\t--\t\t%s\t\t--", new_node->intr[i]);}
+
+
+}
+
