@@ -344,15 +344,16 @@ int menu(char *input, No *me_ptr)
 int main(int argc, char *argv[]) {
 
     // define the structure inside main
-    struct me me_ptr;
+    //struct me me_ptr;
 
     // create a user input variable
     char input[128];
 
 
-    No ext_node, new_node, bck_node;
+    No ext_node, me_ptr, bck_node;
+    
     memset(&ext_node,0,sizeof(No));
-	memset(&new_node,0,sizeof(No));
+	memset(&me_ptr,0,sizeof(No));
 	memset(&bck_node,0,sizeof(No));
 
     me_ptr.ext_node = &ext_node;
@@ -424,9 +425,9 @@ int main(int argc, char *argv[]) {
         //mask for SELECT
 		FD_ZERO(&testfds); // Clear inputs
 		FD_SET(0, &testfds); // Set standard input channel on
-		FD_SET(new_node.listen_tcp_fd, &testfds); // Set tcp channel on
-		//FD_SET(new_node.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on
-        //FD_SET(new_node.bck_node->listen_tcp_fd, &testfds); //set bck_tcp channel on
+		FD_SET(me_ptr.listen_tcp_fd, &testfds); // Set tcp channel on
+		FD_SET(me_ptr.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on
+        FD_SET(me_ptr.bck_node->listen_tcp_fd, &testfds); //set bck_tcp channel on
 
 
         out_fds=select(FD_SETSIZE,&testfds,NULL,NULL,NULL);
