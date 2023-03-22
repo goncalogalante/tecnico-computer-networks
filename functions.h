@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -39,22 +38,32 @@ typedef struct me{
 
     struct sockaddr_in listen_udp_addr,listen_udpchord_addr, listen_tcp_addr;
 
+    struct me *ext_node, *bck_node;
 
     Conteudo conteudos[100]; // array of contents
     int num_conteudos; // actual nº of contents in the list
 
+    char **intr; // pointer to a dynamic array of strings
+    int num_intr; // actual number of elements in the array
 
-    //int *intr; // pointer to an array of integers
-    //int num_intr; // actual number of elements in the array
+
+
 
 
 } No;
 
 
-// declare functions
+/*declare functions*/
+int msg_received(char *msg_declaration);
 
-//djon function
-int djoin(No *new_node, int id, int port, char *ip);
+int comm_treatment(No *new_node, int fd);
 
-// tcp server socket
 int tcp_socket(No *new_node);
+
+int create_tree(No *new_node);
+
+int djoin(No *new_node, char *net, char *id, char *id_boot, char *ip_boot, char *port_boot);
+
+void show(No *new_node);
+
+
