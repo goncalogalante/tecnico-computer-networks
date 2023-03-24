@@ -101,7 +101,94 @@ int menu(char *input, No *me_ptr)
 
     /*------- JOIN --------*/
     if (strcmp(first_word, "join") == 0) {
-        printf("join me ptr");
+
+        int is_valid = 0;
+        // NET verification
+        char *net_number = strtok(NULL," ");
+
+        // verify if NET is NUll or different than 3 digits
+        if (net_number == NULL || strlen(net_number) != 3) { 
+            printf(">> Error: Invalid NET.\n");
+            exit(0);
+        }
+        else {
+
+            // verify if the NET digit string is an integer value
+            for (int i = 0; i < strlen(net_number); i++) {
+            if (!isdigit(net_number[i])) {
+                printf(">> Error: Invalid NET.\n");
+                break;
+            }
+            else{
+            
+                // update the NET for the node structure
+                int net_aux;
+                net_aux = atoi(net_number);
+
+                // verify conditions for NET number
+                if (net_aux < 0 || net_aux > 999) {
+                    printf(">> Error: Invalid NET.\n");
+                    exit(0);
+                }
+                else
+                {
+                // NET update for the node structure    
+                    strcpy(me_ptr->my_net, net_number);
+                    is_valid = 1;
+                }
+            
+            }
+
+            }
+
+        }
+
+            // ID verification
+            char *id_number = strtok(NULL," ");
+            
+            // verify if ID digited nºs is NUll or different than 3 digits
+            if (id_number == NULL || strlen(id_number) != 2) { 
+                printf(">> Error: Invalid ID.\n");
+                exit(0);
+            }
+
+            else {
+
+                // verify if the ID digit string is an integer value
+                for (int i = 0; i < strlen(id_number); i++) {
+                if (!isdigit(id_number[i])) {
+                    printf(">> Error: Invalid IET.\n");
+                    exit(0);
+                    break;
+                }
+                else{
+                    
+                    // convert string to integer variable 
+                    int id_aux;
+                    id_aux= atoi(id_number);
+                    
+                    // verify conditions for ID number
+                    if (id_aux < 0 || id_aux > 99) {
+                        printf(">> Error: Invalid ID.\n");
+                        exit(0);
+                    }
+
+                    // ID update for the node structure
+                    strcpy(me_ptr->id, id_number);
+                    is_valid = 2;
+                
+                }
+
+                }
+
+
+            }
+
+            if (is_valid==2)
+            {
+                printf("join udp por implementar");
+            }  
+
     }
 
     /*------- DJOIN -------- djoin NET ID BOOTID BOOTIP BOOTCP */
@@ -270,6 +357,7 @@ int menu(char *input, No *me_ptr)
                 create_tree(me_ptr);
                 printf("The tree is created with Node %s.\n", me_ptr->id);
 
+
             }
             else{
             create_tree(me_ptr);
@@ -365,7 +453,7 @@ int main(int argc, char *argv[]) {
     int out_fds;
     ssize_t nsize;
 
-    struct sockaddr_in listen_tcp_addr;
+    struct sockaddr_in listen_tcp_addr, listen_udp_addr;
     socklen_t addrlen;
 
     int tempfd;
@@ -430,6 +518,7 @@ int main(int argc, char *argv[]) {
         //mask for SELECT
 		FD_ZERO(&testfds); // Clear inputs
 		FD_SET(0, &testfds); // Set standard input channel on
+        FD_SET(me_ptr.listen_udp_fd, &testfds); // Set tcp channel on
 		FD_SET(me_ptr.listen_tcp_fd, &testfds); // Set tcp channel on
 		FD_SET(me_ptr.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on
         FD_SET(me_ptr.bck_node->listen_tcp_fd, &testfds); //set bck_tcp channel on
@@ -448,7 +537,7 @@ int main(int argc, char *argv[]) {
                 break;
 
             default:
-                if(FD_ISSET(0,&testfds))	//Input from 
+                if(FD_ISSET(0,&testfds))	//Input from user
                 {
                      if((nsize=read(0,input,127))!=0)
 				        {                    
@@ -465,6 +554,8 @@ int main(int argc, char *argv[]) {
 
             else if(FD_ISSET(me_ptr.listen_tcp_fd,&testfds))
 			{
+                printf("dentro do 1º ciclo if listen tcp fd %d", me_ptr.listen_tcp_fd);
+
 				addrlen=sizeof(listen_tcp_addr);
 
 				if((tempfd = accept(me_ptr.listen_tcp_fd, (struct sockaddr*) &listen_tcp_addr, &addrlen)) == -1) /*error*/exit(1);
@@ -475,9 +566,16 @@ int main(int argc, char *argv[]) {
 				comm_treatment(&me_ptr,tempfd);
 
 			}
-                
 
 
+            else if (FD_ISSET(me_ptr.ext_node->listen_tcp_fd, &testfds)) 
+            {
+                comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd);
+                break;
+
+
+            }
+           
 
 
         }

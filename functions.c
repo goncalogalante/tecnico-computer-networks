@@ -21,11 +21,9 @@
 #define CONTENT 5
 #define NOCONTENT 6
 
-#define OKREG 7
-#define OKUNREG 8
-#define NODESLIST 9
-
-
+#define NODESLIST 7
+#define OKREG 8
+#define OKUNREG 9
 
 
 int msg_received(char *msg_declaration)
@@ -44,7 +42,7 @@ int msg_received(char *msg_declaration)
 	else if (strcmp(msg_declaration,"OKUNREG")  == 0) return OKUNREG;
 	else if (strcmp(msg_declaration,"NODESLIST")  == 0) return NODESLIST;
 	
-	return (-1);
+	return -1;
 }
 
 
@@ -54,9 +52,13 @@ int comm_treatment(No *new_node, int fd)
 {
 
 	ssize_t aux_bytes;
-	char buffer[128], msg[6];
+	char buffer[128], msg[6], id_msg[3], ip_msg[128], port_msg[6];
 
-	aux_bytes=read(fd,buffer,128);
+	bzero(buffer, 128);
+
+	fd_set testfds;
+
+	aux_bytes=read(fd,buffer,128);  // aux_bytes=read(tempfd,buffer,128); 
 	
 	if (aux_bytes == -1)
 		{
@@ -65,69 +67,60 @@ int comm_treatment(No *new_node, int fd)
 			exit(1);
 		}
 
-	/*else if(aux_bytes == 0)
-		{
-			setsockopt(fd, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
-			close(fd);
-
-			return(-1);
-
-		}*/
-
 	printf("chegou: %s", buffer);
 	sscanf(buffer, "%s",msg);
 
+	printf("msg_received %d\n", msg_received(msg));
+
 	switch(msg_received(msg))
 	{
-		case NEW:
-		{
+		case NEW: // NEW 02 IP02 PORT02
 
-		}
+			sscanf(buffer, "%s %s %s %s", msg, id_msg, ip_msg, port_msg);
+
+			if(strcmp(new_node->id, new_node->ext_node->id) == 0) // Nó sozinho
+			{
+				strcpy(new_node->ext_node->id, id_msg);
+				strcpy(new_node->ext_node->ip, ip_msg);
+				strcpy(new_node->ext_node->port, port_msg);
+
+				aux_bytes = sprintf(buffer, "EXTERN %s %s %s\n", new_node->ext_node->id, new_node->ext_node->ip, new_node->ext_node->port);
+
+				aux_bytes = write(fd,buffer,aux_bytes);
+			}
+			else{
+				
+				//atualizar internos
+				
+				aux_bytes = sprintf(buffer, "EXTERN %s %s %s\n", new_node->ext_node->id, new_node->ext_node->ip, new_node->ext_node->port);
+
+				aux_bytes = write(fd,buffer,aux_bytes);
+				
+			}
+		
+
+			break;
+
+
+		case EXTERN:
+
+			sscanf(buffer, "%s %s %s %s", msg, id_msg, ip_msg, port_msg);
+			printf("Recebi: %s", buffer); //EXTERN 02 IP02 PORT02
+
+			strcpy(new_node->bck_node->id, id_msg);
+			strcpy(new_node->bck_node->ip, ip_msg);
+			strcpy(new_node->bck_node->port, port_msg);
+		
+
+		break;
 
 
 	}
 
-
-
+	return 0;
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // create server TCP socket
@@ -177,11 +170,52 @@ int tcp_socket(No *new_node)
 
 }
 
+// create server UDP socket
+int udp_socket(No *new_node)
+{
+	int fd, errcode=0, aux=0;
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd == -1) exit(1); //error
+
+	memset(&new_node->listen_udp_hints, 0, sizeof(struct addrinfo));
+	new_node->listen_udp_hints.ai_family = AF_INET; // IPv4
+	new_node->listen_udp_hints.ai_socktype = SOCK_DGRAM; // UDP Socket
+	new_node->listen_udp_hints.ai_protocol = IPPROTO_UDP; // UDP Protocol
+	new_node->listen_udp_hints.ai_flags = AI_PASSIVE;
+
+	errcode = getaddrinfo(NULL, new_node->port, &new_node->listen_udp_hints, &new_node->listen_udp_res);
+	if((errcode)!=0)/*error*/
+	{
+		gai_strerror(errcode);
+		perror("getaddrinfo");
+		exit(1);
+	}
+
+	aux = bind(fd, new_node->listen_udp_res->ai_addr, new_node->listen_udp_res->ai_addrlen);
+	if(aux == -1) 
+	{
+		if(errno == 98)
+		{
+			printf("Connection already exists.\n");
+			return 0;
+		}
+		perror("bind");
+		/*error*/ exit(1);
+	}
+
+	new_node->listen_udp_fd = fd;
+
+	return 0;
+}
+
+
+
 // create tree   ->  if (utilizado quando djoin id ip port = id ip port da estrutura)
 int create_tree(No *new_node)
 {
-
-    tcp_socket(new_node);
+	udp_socket(new_node); // udp comm with server of nodes
+    tcp_socket(new_node); // tcp comm 
 
 	strcpy(new_node->ext_node->id, new_node->id);
 	strcpy(new_node->bck_node->id, new_node->id);
@@ -205,6 +239,7 @@ int create_tree(No *new_node)
 	return 0;
 	
 }
+
 
 // djoin function
 int djoin(No *new_node, char *net, char *id, char*id_boot, char *ip_boot, char *port_boot)
@@ -254,6 +289,14 @@ int djoin(No *new_node, char *net, char *id, char*id_boot, char *ip_boot, char *
 		perror("write");
 		/*error*/exit(1);
 	}
+
+	 // update the extern node structure (id, ip, port)
+	new_node->ext_node->listen_tcp_fd = fd;
+	strcpy(new_node->ext_node->id,id_boot);
+	strcpy(new_node->ext_node->port, port_boot);
+	strcpy(new_node->ext_node->ip, ip_boot);
+
+
 
 return 0;
 }

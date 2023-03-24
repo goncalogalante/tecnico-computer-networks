@@ -32,11 +32,12 @@ typedef struct me{
     char my_net[3]; // net nº where I belong
 
     int listen_tcp_fd; // listen_tcp_fd
+    int listen_udp_fd; // listen_udp_fd
 
     struct addrinfo listen_tcp_hints, *listen_tcp_res;
 	struct addrinfo listen_udp_hints, *listen_udp_res;
 
-    struct sockaddr_in listen_udp_addr,listen_udpchord_addr, listen_tcp_addr;
+    struct sockaddr_in listen_udp_addr, listen_tcp_addr;
 
     struct me *ext_node, *bck_node;
 
@@ -57,6 +58,8 @@ typedef struct me{
 int msg_received(char *msg_declaration);
 
 int comm_treatment(No *new_node, int fd);
+
+int udp_socket(No *new_node);
 
 int tcp_socket(No *new_node);
 
