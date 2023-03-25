@@ -13,10 +13,6 @@
 #include <ctype.h>
 #include "functions.h"
 
-/* NÃO ESQUECER!!!!!!!!!!!!!!!!
-
-1) DJOIN COM MAIS QUE UM NÓ (SELECT)
-2) INTR E MECANISMOS*/
 
 // auxiliar functions:
 
@@ -416,6 +412,8 @@ int menu(char *input, No *me_ptr)
 
     /*------- LEAVE --------*/
     if (strcmp(first_word, "leave") == 0) {
+
+
         
     }
 
@@ -437,6 +435,7 @@ int main(int argc, char *argv[]) {
 
     // create a user input variable
     char input[128];
+
 
 
     No ext_node, me_ptr, bck_node;

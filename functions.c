@@ -70,11 +70,9 @@ int comm_treatment(No *new_node, int fd)
 	printf("chegou: %s", buffer);
 	sscanf(buffer, "%s",msg);
 
-	printf("msg_received %d\n", msg_received(msg));
-
 	switch(msg_received(msg))
 	{
-		case NEW: // NEW 02 IP02 PORT02
+		case NEW: // NEW 02(id_msg) IP02(ip_msg) PORT02(port_msg)
 
 			sscanf(buffer, "%s %s %s %s", msg, id_msg, ip_msg, port_msg);
 
@@ -90,8 +88,23 @@ int comm_treatment(No *new_node, int fd)
 			}
 			else{
 				
-				//atualizar internos
+				//----atualizar internos----
+
+				//printf("new_node -> num_nodes %d", new_node->num_nodes);
+
+				strcpy(new_node->intr_nodes[new_node->num_nodes].id, id_msg);
+				strcpy(new_node->intr_nodes[new_node->num_nodes].ip, ip_msg);
+				strcpy(new_node->intr_nodes[new_node->num_nodes].port, port_msg);
 				
+				sprintf(new_node->intr_nodes[new_node->num_nodes].intr_fd, "%d", fd);
+
+
+				// increment the number of nodes
+				new_node->num_nodes++;
+
+
+				//----atualizar internos----
+
 				aux_bytes = sprintf(buffer, "EXTERN %s %s %s\n", new_node->ext_node->id, new_node->ext_node->ip, new_node->ext_node->port);
 
 				aux_bytes = write(fd,buffer,aux_bytes);
@@ -105,7 +118,6 @@ int comm_treatment(No *new_node, int fd)
 		case EXTERN:
 
 			sscanf(buffer, "%s %s %s %s", msg, id_msg, ip_msg, port_msg);
-			printf("Recebi: %s", buffer); //EXTERN 02 IP02 PORT02
 
 			strcpy(new_node->bck_node->id, id_msg);
 			strcpy(new_node->bck_node->ip, ip_msg);
@@ -305,16 +317,6 @@ return 0;
 void show(No *new_node)
 {
 
-	/*new_node->intr = malloc(sizeof(char*) * 10); // allocate an initial capacity for the array of strings
-	new_node->num_intr = 0; // initialize the number of elements to 0
-
-	char *new_str = "05"; // the new string to add
-	int new_size = (new_node->num_intr + 1) * sizeof(char*); // the new size of the array of strings
-	new_node->intr = realloc(new_node->intr, new_size); // increase the size of the array
-	new_node->intr[new_node->num_intr] = malloc(strlen(new_str) + 1); // allocate memory for the new string
-	strcpy(new_node->intr[new_node->num_intr], new_str); // copy the new string into the array
-	new_node->num_intr++; // increase the number of elements in the array*/
-
 
 	printf("\text\t\tNode\t\tbck\t");
 	printf("\n");
@@ -328,8 +330,11 @@ void show(No *new_node)
 	printf("port\t%s\t\t%s\t\t%s", new_node->ext_node->port, new_node->port, new_node->bck_node->port);
 	printf("\n");
 
-	//for (int i = 0; i < new_node->num_intr; i++) {
-    //printf("\nintr\t--\t\t%s\t\t--", new_node->intr[i]);}
+	printf("\n-----Intr:-----\n");
+    for (int i = 0; i < new_node->num_nodes; i++) {
+        printf("%s %s %s %s\n", new_node->intr_nodes[i].id, new_node->intr_nodes[i].ip, new_node->intr_nodes[i].port, new_node->intr_nodes[i].intr_fd);
+    }
+    printf("-----Intr-----\n");
 
 
 }

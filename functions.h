@@ -11,6 +11,15 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+// intr structure
+typedef struct {
+    char ip[100];
+    char port[100];
+    char id[100];
+    char intr_fd[100];
+} NodeInfo;
+
+
 typedef struct {
     char name[100];
     
@@ -44,12 +53,9 @@ typedef struct me{
     Conteudo conteudos[100]; // array of contents
     int num_conteudos; // actual nº of contents in the list
 
-    char **intr; // pointer to a dynamic array of strings
-    int num_intr; // actual number of elements in the array
-
-
-
-
+    // intr nodes structure initialization
+    NodeInfo intr_nodes[100];
+    int num_nodes;
 
 } No;
 
