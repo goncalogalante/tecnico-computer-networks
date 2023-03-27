@@ -412,7 +412,7 @@ int menu(char *input, No *me_ptr)
 
     /*------- LEAVE --------*/
     if (strcmp(first_word, "leave") == 0) {
-
+        leave(me_ptr);
 
         
     }
@@ -456,6 +456,9 @@ int main(int argc, char *argv[]) {
     socklen_t addrlen;
 
     int tempfd;
+
+
+    int errno = 0;
 
     
 
@@ -522,12 +525,12 @@ int main(int argc, char *argv[]) {
 		FD_SET(me_ptr.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on
         FD_SET(me_ptr.bck_node->listen_tcp_fd, &testfds); //set bck_tcp channel on
 
-
         out_fds=select(FD_SETSIZE,&testfds,NULL,NULL,NULL);
 
         switch(out_fds)
         {
             case -1:
+                printf("errno select: %d\n",errno);
                 perror("select");
                 exit(0);
 
@@ -541,19 +544,19 @@ int main(int argc, char *argv[]) {
                      if((nsize=read(0,input,127))!=0)
 				        {                    
 					    /*if(nsize==-1)
-					        {	
-						    leave(&new_node);
-						    exit(1);
+					        {
+                            printf("comida");
+						    //leave(&me_ptr);
+						    //exit(1);
 					        }*/
 					    input[nsize]=0;
 					    menu(input, &me_ptr);
 				        }   
                 }
             
-
+            // aceita novos clientes 
             else if(FD_ISSET(me_ptr.listen_tcp_fd,&testfds))
 			{
-                printf("dentro do 1º ciclo if listen tcp fd %d", me_ptr.listen_tcp_fd);
 
 				addrlen=sizeof(listen_tcp_addr);
 
@@ -566,7 +569,7 @@ int main(int argc, char *argv[]) {
 
 			}
 
-
+            // comunicação com outros clientes
             else if (FD_ISSET(me_ptr.ext_node->listen_tcp_fd, &testfds)) 
             {
                 comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd);
@@ -574,7 +577,7 @@ int main(int argc, char *argv[]) {
 
 
             }
-           
+        
 
 
         }
