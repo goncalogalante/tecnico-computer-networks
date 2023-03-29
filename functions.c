@@ -459,7 +459,7 @@ int comm_treatment(No *new_node, int fd)
 				for (int i = 0; i < new_node->num_entradas; i++) 
 				{
 
-					// caso dest está no Destino
+					// caso dest está no Destino CASO 08
 					if(strcmp(dest, new_node->matrix[i][0].nodes_id)==0)
 					{
 
@@ -471,6 +471,8 @@ int comm_treatment(No *new_node, int fd)
 
 						cntr ++;
 
+						// No need to expedition table
+
 					} 
 				
 
@@ -478,8 +480,12 @@ int comm_treatment(No *new_node, int fd)
 					else if(strcmp(dest, new_node->matrix[i][0].nodes_id)!=0 && cntr==0)
 					{
 
-						// se a orig estiver no Destino 
+						show_routing(new_node);
+
+						// se a orig estiver no Destino ent para cada vez que a orig!=Destino ele manda query (ta certo)
 						if (strcmp(orig, new_node->matrix[i][0].nodes_id)!=0){
+
+							printf("entrei aquiiiiiiiii");
 			
 							aux_bytes = sprintf(buffer, "QUERY %s %s %s\n", dest, orig, name);
 
@@ -490,6 +496,12 @@ int comm_treatment(No *new_node, int fd)
 							// No need to expedition table
 
 						}
+
+
+
+
+
+
 					
 					}
 
