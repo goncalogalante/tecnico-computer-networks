@@ -28,17 +28,14 @@ typedef struct {
 // Me node structure
 typedef struct me{
 
+    char id[2]; // my id
     char ip[64]; // my ip
     char port[6]; // my port
+    
+    char my_net[3]; // net nº where I belong
 
     char ip_nodeserver[64];
     char port_nodeserver[6];
-
-    char id[2]; // my id
-    char ext[2]; // extern neighborhood id
-    char bck[2]; // backup neighborhood id
-
-    char my_net[3]; // net nº where I belong
 
     int listen_tcp_fd; // listen_tcp_fd
     int listen_udp_fd; // listen_udp_fd
@@ -61,6 +58,9 @@ typedef struct me{
 
 
 /*declare functions*/
+
+int leave(No *new_node);
+
 int msg_received(char *msg_declaration);
 
 int comm_treatment(No *new_node, int fd);

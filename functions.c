@@ -25,6 +25,49 @@
 #define OKREG 8
 #define OKUNREG 9
 
+int leave(No *new_node)
+
+{
+	int fd_i;
+
+	if(strcmp(new_node->id, new_node->bck_node->id) == 0) // Saída de Nó ancora
+			{
+				// to implement
+			}
+	if(strcmp(new_node->id, new_node->bck_node->id) != 0)
+	{
+		//percorrer lista dos internos 
+		for (int i = 0; i < new_node->num_nodes; i++) {
+			fd_i = atoi(new_node->intr_nodes[i].intr_fd);
+			close(fd_i);
+		}
+		//close socket do externo
+		//close(new_node->ext_node->listen_tcp_fd);
+
+		// remove interns from the structure
+		int i;
+		for (i = 0; i < new_node->num_nodes; i++) {
+		memset(&new_node->intr_nodes[i], 0, sizeof(NodeInfo)); // set all values in the node to zero
+		}
+		new_node->num_nodes = 0; // set the number of nodes to zero
+
+		// remove externo = igual a ele proprio
+		strcpy(new_node->ext_node->id, new_node->id);
+		strcpy(new_node->ext_node->ip, new_node->ip );
+		strcpy(new_node->ext_node->port, new_node->port);
+
+		// remove bck = igual a ele proprio
+		strcpy(new_node->bck_node->id, new_node->id);
+		strcpy(new_node->bck_node->ip, new_node->ip);
+		strcpy(new_node->bck_node->port, new_node->port);
+		
+	}
+
+	return 0;
+
+
+}
+
 
 int msg_received(char *msg_declaration)
 
@@ -58,6 +101,8 @@ int comm_treatment(No *new_node, int fd)
 
 	fd_set testfds;
 
+	struct linger lo = { 1, 0 };
+
 	aux_bytes=read(fd,buffer,128);  // aux_bytes=read(tempfd,buffer,128); 
 	
 	if (aux_bytes == -1)
@@ -66,6 +111,15 @@ int comm_treatment(No *new_node, int fd)
 			//leave(new_node);
 			exit(1);
 		}
+
+	else if(aux_bytes == 0) //no more data to be read means that the fd that is sending info is closed
+	{
+		setsockopt(fd, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
+		close(fd);
+
+		return(-1);
+	}	
+
 
 	printf("chegou: %s", buffer);
 	sscanf(buffer, "%s",msg);
