@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+
+
 // intr structure
 typedef struct {
     char ip[100];
@@ -24,6 +26,13 @@ typedef struct {
     char name[100];
     
 } Conteudo;
+
+typedef struct {
+    char nodes_id[100];
+    char fds[03];
+    
+    
+} expedicao;
 
 // Me node structure
 typedef struct me{
@@ -57,10 +66,27 @@ typedef struct me{
     NodeInfo intr_nodes[100];
     int num_nodes;
 
+    // tabela de expedicao
+    expedicao matrix[100][100];
+    int num_dv;
+    int num_entradas;
+
+    int tempfd_array[100]; // array of tempfds
+    int num_tempfds; // actual nº of tempfds in the list
+
+
 } No;
 
 
 /*declare functions*/
+int get(No *new_node, char *dest, char *name);
+
+void clear_routing(No *new_node);
+
+void show_routing(No *new_node);
+
+int leave(No *new_node);
+
 int msg_received(char *msg_declaration);
 
 int comm_treatment(No *new_node, int fd);
@@ -73,6 +99,10 @@ int create_tree(No *new_node);
 
 int djoin(No *new_node, char *net, char *id, char *id_boot, char *ip_boot, char *port_boot);
 
-void show(No *new_node);
+void show_topology(No *new_node);
+
+void show_fds(No *new_node);
 
 
+
+int join(No *new_node, char *net, char *id);
