@@ -328,9 +328,11 @@ int comm_treatment(No *new_node, int fd)
 	char buffer[500], msg[10], id_msg[3], ip_msg[128], port_msg[6];
 	struct linger lo = { 1, 0 };
 	char orig[3], dest[3], name[128]; // auxiliar QUERY
+	
 
 	//join
 	char net[04];
+	char id_choose[3], ip_choose[64], port_choose[6];
 	
 
 
@@ -1044,14 +1046,6 @@ int comm_treatment(No *new_node, int fd)
 			{
 
 				cntr_aux ++;
-
-				/*aux_bytes = sprintf(buffer, "CONTENT %s %s %s\n", orig, dest, name);
-
-				int indice_orig = atoi(orig);
-
-				aux_bytes = write(new_node->tempfd_array[indice_orig],buffer,aux_bytes);*/
-
-				
 				
 				for(int b = 0; b < new_node->num_entradas; b++)
 				{
@@ -1264,9 +1258,6 @@ int comm_treatment(No *new_node, int fd)
 
 			
 
-
-
-
 		break;
 
 		
@@ -1274,24 +1265,50 @@ int comm_treatment(No *new_node, int fd)
 		//join
 		case NODESLIST:
 
+
 		sscanf(buffer, "%s %s", msg, net);
 
-		printf("%d", strlen(buffer));
 
 
-		/*for (int i = 14; i<strlen(buffer); i++)
+		if (strlen(buffer) > strlen("NODESLIST XXX\n")) 
 		{
-			printf("Valor do elemento %d da string = %c\n",i, buffer[i]);
-		}*/
+
+			printf("Choose a Node ID to connect: ");
+    		scanf("%s", &id_choose);
+			
+		
+			// Find the node with the matching identifier
+			char *token = strtok(buffer, "\n"); // Get the first line
+			while (token != NULL) {
+				// Check if the line represents a node
+				if (strlen(token) >= 3) {
+					// If the identifier matches the entered value, print the node info
+					if (strncmp(token, id_choose, 2) == 0) {
+						break;
+					}
+				}
+				token = strtok(NULL, "\n"); // Move to the next line
+			}
+
+			sscanf(token, "%s %s %s", id_choose, ip_choose, port_choose);
+
+			aux_bytes = sprintf(buffer, "REG %s %s %s %s\n", net, new_node->id, new_node->ip, new_node->port);
+
+			aux_bytes=sendto(new_node->ext_node->listen_udp_fd,buffer,aux_bytes,0, new_node->listen_udp_res->ai_addr,new_node->listen_udp_res->ai_addrlen);
+
+			djoin(new_node, new_node->my_net, new_node->id, id_choose, ip_choose, port_choose);
+
+		}
+
+		else
+		{
+			aux_bytes = sprintf(buffer, "REG %s %s %s %s\n", net, new_node->id, new_node->ip, new_node->port);
+
+			aux_bytes=sendto(new_node->ext_node->listen_udp_fd,buffer,aux_bytes,0, new_node->listen_udp_res->ai_addr,new_node->listen_udp_res->ai_addrlen);
+
+		}
 
 
-		aux_bytes = sprintf(buffer, "REG %s %s %s %s\n", net, new_node->id, new_node->ip, new_node->port);
-
-		aux_bytes=sendto(new_node->ext_node->listen_udp_fd,buffer,aux_bytes,0, new_node->listen_udp_res->ai_addr,new_node->listen_udp_res->ai_addrlen);
-
-		printf("comida bem forte\n");
-
-		//create_tree(new_node);
 
 
 		break;
