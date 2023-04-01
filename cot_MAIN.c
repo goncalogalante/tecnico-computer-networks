@@ -182,7 +182,8 @@ int menu(char *input, No *me_ptr)
 
             if (is_valid==2)
             {
-                printf("join udp por implementar");
+                create_tree(me_ptr);
+                join(me_ptr, net_number,id_number);
             }  
 
     }
@@ -393,11 +394,54 @@ int menu(char *input, No *me_ptr)
     /*------- GET --------*/
     if (strcmp(first_word, "get") == 0) {
         
+         // ID verification
+        char *dest = strtok(NULL," ");
+        int is_valid_get = 0;
+        
+        // verify if ID digited nºs is NUll or different than 3 digits
+        if (dest == NULL || strlen(dest) != 2) { 
+            printf(">> Error: Invalid dest.\n");
+            exit(0);
+        }
+
+        else {
+
+            // verify if the ID digit string is an integer value
+            for (int i = 0; i < strlen(dest); i++) {
+            if (!isdigit(dest[i])) {
+                printf(">> Error: Invalid IET.\n");
+                exit(0);
+                break;
+            }
+            else{
+                
+                // convert string to integer variable 
+                int dest_aux;
+                dest_aux= atoi(dest);
+                
+                // verify conditions for ID number
+                if (dest_aux < 0 || dest_aux > 99) {
+                    printf(">> Error: Invalid dest.\n");
+                    exit(0);
+                }
+            
+            }
+
+            }
+
+        } 
+
+        char *name = strtok(NULL," ");
+
+        get(me_ptr, dest, name);
+
+
+
     }
 
     /*------- SHOW TOPOLOGY --------*/
     if (strcmp(first_word, "st") == 0) {
-        show(me_ptr);
+        show_topology(me_ptr);
     }
 
     /*------- SHOW NAMES --------*/
@@ -407,20 +451,31 @@ int menu(char *input, No *me_ptr)
 
     /*------- SHOW ROUTING --------*/
     if (strcmp(first_word, "sr") == 0) {
+        show_routing(me_ptr);
+        
+    }
+
+     /*------- CLEAR ROUTING --------*/
+    if (strcmp(first_word, "cr") == 0) {
+        clear_routing(me_ptr);
         
     }
 
     /*------- LEAVE --------*/
     if (strcmp(first_word, "leave") == 0) {
+        leave(me_ptr);
 
-
-        
     }
 
     /*------- EXIT --------*/
     if (strcmp(first_word, "exit") == 0) {
         printf("Exiting the program...");
         exit;
+    }
+
+    /*------- show fds --------*/
+    if (strcmp(first_word, "sfd") == 0) {
+        show_fds(me_ptr);
     }
 
     return 0;
@@ -437,7 +492,6 @@ int main(int argc, char *argv[]) {
     char input[128];
 
 
-
     No ext_node, me_ptr, bck_node;
     
     memset(&ext_node,0,sizeof(No));
@@ -447,6 +501,7 @@ int main(int argc, char *argv[]) {
     me_ptr.ext_node = &ext_node;
 	me_ptr.bck_node = &bck_node;
 
+    me_ptr.num_dv=1;
 
     fd_set testfds;	
     int out_fds;
@@ -515,15 +570,33 @@ int main(int argc, char *argv[]) {
     while (1) {
 
         //mask for SELECT
-		FD_ZERO(&testfds); // Clear inputs
+		FD_ZERO(&testfds); // Clear inputs+++
 		FD_SET(0, &testfds); // Set standard input channel on
         FD_SET(me_ptr.listen_udp_fd, &testfds); // Set tcp channel on
 		FD_SET(me_ptr.listen_tcp_fd, &testfds); // Set tcp channel on
 		FD_SET(me_ptr.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on
-        FD_SET(me_ptr.bck_node->listen_tcp_fd, &testfds); //set bck_tcp channel on
+        //printf("bck fd %d", me_ptr.bck_node->listen_tcp_fd);
+        //FD_SET(tempfd, &testfds); 
+        FD_SET(me_ptr.ext_node->listen_udp_fd, &testfds); //set ext_tcp channel on
 
 
-        out_fds=select(FD_SETSIZE,&testfds,NULL,NULL,NULL);
+        // Add all tempfds from the array
+        for(int i = 0; i < 100; i++) {
+            FD_SET(me_ptr.tempfd_array[i], &testfds);
+        }
+
+        for (int i = 0; i < 10; i++) {
+                printf("%d ", me_ptr.tempfd_array[i]);
+            }
+            printf("\n");
+
+
+        //printf("listen_tcp_fd %d\n", me_ptr.listen_tcp_fd);
+        printf("listen_tcp_fd do DJOIN %d\n", me_ptr.ext_node->listen_tcp_fd);
+        printf("listen_udp_fd %d\n", me_ptr.ext_node->listen_udp_fd);
+
+    
+        out_fds=select(FD_SETSIZE,&testfds,NULL,NULL,NULL); // -1
 
         switch(out_fds)
         {
@@ -550,37 +623,59 @@ int main(int argc, char *argv[]) {
 				        }   
                 }
             
+                // accept and new connections new
+                else if(FD_ISSET(me_ptr.listen_tcp_fd,&testfds))
+                {
 
-            else if(FD_ISSET(me_ptr.listen_tcp_fd,&testfds))
-			{
-                printf("dentro do 1º ciclo if listen tcp fd %d", me_ptr.listen_tcp_fd);
+                    addrlen=sizeof(listen_tcp_addr);
 
-				addrlen=sizeof(listen_tcp_addr);
-
-				if((tempfd = accept(me_ptr.listen_tcp_fd, (struct sockaddr*) &listen_tcp_addr, &addrlen)) == -1) /*error*/exit(1);
-                else{
-                    printf("accepted\n");
+                    tempfd = accept(me_ptr.listen_tcp_fd, (struct sockaddr*) &listen_tcp_addr, &addrlen);
+                
+                    if(tempfd == -1)
+                    {   
+                        /*error*/exit(1);
+                    }
+                    else
+                    {
+                        comm_treatment(&me_ptr,tempfd);
+                        printf("entrei");
+                    }
                 }
-				
-				comm_treatment(&me_ptr,tempfd);
 
-			}
+                // receber extern 
+                else if (FD_ISSET(me_ptr.ext_node->listen_tcp_fd, &testfds)) 
+                {   
+                    if(comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd) == -1);
+                    {
+                        printf("comida\n");
+
+                    }
+                    break;
+
+                }
+
+                else if (FD_ISSET(me_ptr.ext_node->listen_udp_fd, &testfds))
+                {
+                    printf("comida\n");
+                    comm_treatment(&me_ptr, me_ptr.ext_node->listen_udp_fd);
+                    
+                }
 
 
-            else if (FD_ISSET(me_ptr.ext_node->listen_tcp_fd, &testfds)) 
-            {
-                comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd);
-                break;
-
-
-            }
-           
+                // gets e leaves
+                else{
+                    for(int i = 0; i<100; i++)
+                    {
+                    if (FD_ISSET(me_ptr.tempfd_array[i], &testfds)) 
+                    {
+                            printf("comidassss %d\n", me_ptr.tempfd_array[i]);
+                            comm_treatment(&me_ptr, me_ptr.tempfd_array[i]);
+                    }
+                    }
+                }
 
 
         }
-
-
-    
 
     }
 
