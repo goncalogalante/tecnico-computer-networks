@@ -478,6 +478,11 @@ int menu(char *input, No *me_ptr)
         show_fds(me_ptr);
     }
 
+    /*-------  limpeza gira --------*/
+    if (strcmp(first_word, "limp") == 0) {
+        //limpeza(me_ptr);
+    }
+
     return 0;
 
 }
@@ -648,6 +653,8 @@ int main(int argc, char *argv[]) {
                     if(comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd) == -1);
                     {
                         printf("comida\n");
+                        //me_ptr.fd_indice
+
 
                     }
                     break;
