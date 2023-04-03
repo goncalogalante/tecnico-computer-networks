@@ -14,7 +14,7 @@
 #include "functions.h"
 
 
-// auxiliar functions:
+// auxiliar functions to main:
 
 // function to print the command menu
 void print_cmdmenu() {
@@ -34,47 +34,6 @@ void print_cmdmenu() {
   printf("10) exit: Fecho da aplicação.\n");
 }
 
-// function to create a content name for the node 
-void create(char *nome_conteudo, No *no)
-{
-
-Conteudo new_conteudo;
-strcpy(new_conteudo.name, nome_conteudo); 
-no->conteudos[no->num_conteudos] = new_conteudo;
-no->num_conteudos++;
-
-}
-
-// function to delete a content name for the node
-void delete(char *nome_conteudo, No *no)
-{
-
-    int i, j;
-    for (i = 0; i < no->num_conteudos; i++) {
-        if (strcmp(no->conteudos[i].name, nome_conteudo) == 0) { // find the content to be deleted
-            
-            for (j = i; j < no->num_conteudos-1; j++) {
-                no->conteudos[j] = no->conteudos[j+1];
-            }
-            no->num_conteudos--; 
-            printf("Content removed.\n");
-        }
-    }
-
-}
-
-// function to show the names of contents in the node
-void show_names(No *no)
-{
-
-    printf("\n-----Contents of the node:-----\n");
-    for (int i = 0; i < no->num_conteudos; i++) {
-        printf("%s\n", no->conteudos[i].name);
-    }
-    printf("-----End of contents-----\n");
-
-}
-
 // function to present the menu
 int menu(char *input, No *me_ptr)
 {
@@ -82,8 +41,6 @@ int menu(char *input, No *me_ptr)
     char ip[64]; // node ip address to connect
     char port[6]; // node port to connect
     
-    //printf("\n>> Command input: %s", input);
-    //fgets(input, 100, stdin);
     input[strcspn(input, "\n")] = 0; // remove the newline character
 
     char *first_word = strtok(input, " ");
@@ -343,11 +300,6 @@ int menu(char *input, No *me_ptr)
         
         if (is_valid==5)
         {
-            printf("-------------------------------------------------\n");
-            printf("Node ID: %s | Node NET: %s\n", me_ptr->id, me_ptr->my_net);
-            printf("bootid: %s | bootIP: %s | bootTCP: %s\n", id, ip,port );
-            printf("-------------------------------------------------\n");
-
 
             if ((strcmp(id, me_ptr->id) == 0) && (strcmp(ip, me_ptr->ip) == 0) && (strcmp(port, me_ptr->port) == 0))
             {
@@ -396,7 +348,6 @@ int menu(char *input, No *me_ptr)
         
          // ID verification
         char *dest = strtok(NULL," ");
-        int is_valid_get = 0;
         
         // verify if ID digited nºs is NUll or different than 3 digits
         if (dest == NULL || strlen(dest) != 2) { 
@@ -470,13 +421,14 @@ int menu(char *input, No *me_ptr)
     /*------- EXIT --------*/
     if (strcmp(first_word, "exit") == 0) {
         printf("Exiting the program...");
-        exit;
+        exit(1);
     }
 
     /*------- show fds --------*/
     if (strcmp(first_word, "sfd") == 0) {
         show_fds(me_ptr);
     }
+
 
     return 0;
 
@@ -485,12 +437,8 @@ int menu(char *input, No *me_ptr)
 
 int main(int argc, char *argv[]) {
 
-    // define the structure inside main
-    //struct me me_ptr;
-
     // create a user input variable
     char input[128];
-
 
     No ext_node, me_ptr, bck_node;
     
@@ -507,12 +455,10 @@ int main(int argc, char *argv[]) {
     int out_fds;
     ssize_t nsize;
 
-    struct sockaddr_in listen_tcp_addr, listen_udp_addr;
+    struct sockaddr_in listen_tcp_addr;
     socklen_t addrlen;
 
     int tempfd;
-
-    
 
     // verify the number of arguments
     if (argc != 5) {
@@ -565,19 +511,15 @@ int main(int argc, char *argv[]) {
 
     // ------------------------ SELECT -------------------------
 
-
-    // RUN SELECT
     while (1) {
 
         //mask for SELECT
-		FD_ZERO(&testfds); // Clear inputs+++
-		FD_SET(0, &testfds); // Set standard input channel on
-        FD_SET(me_ptr.listen_udp_fd, &testfds); // Set tcp channel on
-		FD_SET(me_ptr.listen_tcp_fd, &testfds); // Set tcp channel on
-		FD_SET(me_ptr.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on
-        //printf("bck fd %d", me_ptr.bck_node->listen_tcp_fd);
-        //FD_SET(tempfd, &testfds); 
-        FD_SET(me_ptr.ext_node->listen_udp_fd, &testfds); //set ext_tcp channel on
+		FD_ZERO(&testfds); // clear inputs
+		FD_SET(0, &testfds); // standard input channel on
+        FD_SET(me_ptr.listen_udp_fd, &testfds); // udp channel on
+		FD_SET(me_ptr.listen_tcp_fd, &testfds); // tcp channel on
+		FD_SET(me_ptr.ext_node->listen_tcp_fd, &testfds); //set ext_tcp channel on 
+        FD_SET(me_ptr.ext_node->listen_udp_fd, &testfds); //set ext_udp channel on
 
 
         // Add all tempfds from the array
@@ -596,7 +538,7 @@ int main(int argc, char *argv[]) {
         printf("listen_udp_fd %d\n", me_ptr.ext_node->listen_udp_fd);
 
     
-        out_fds=select(FD_SETSIZE,&testfds,NULL,NULL,NULL); // -1
+        out_fds=select(FD_SETSIZE,&testfds,NULL,NULL,NULL); 
 
         switch(out_fds)
         {
@@ -609,21 +551,16 @@ int main(int argc, char *argv[]) {
                 break;
 
             default:
-                if(FD_ISSET(0,&testfds))	//Input from user
+                if(FD_ISSET(0,&testfds))
                 {
                      if((nsize=read(0,input,127))!=0)
 				        {                    
-					    /*if(nsize==-1)
-					        {	
-						    leave(&new_node);
-						    exit(1);
-					        }*/
 					    input[nsize]=0;
 					    menu(input, &me_ptr);
 				        }   
                 }
             
-                // accept and new connections new
+
                 else if(FD_ISSET(me_ptr.listen_tcp_fd,&testfds))
                 {
 
@@ -638,17 +575,15 @@ int main(int argc, char *argv[]) {
                     else
                     {
                         comm_treatment(&me_ptr,tempfd);
-                        printf("entrei");
                     }
                 }
 
-                // receber extern 
+ 
                 else if (FD_ISSET(me_ptr.ext_node->listen_tcp_fd, &testfds)) 
                 {   
-                    if(comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd) == -1);
+                    strcpy(me_ptr.fd_temporario, "00");
+                    if(comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd) == -1)
                     {
-                        printf("comida\n");
-
                     }
                     break;
 
@@ -656,18 +591,16 @@ int main(int argc, char *argv[]) {
 
                 else if (FD_ISSET(me_ptr.ext_node->listen_udp_fd, &testfds))
                 {
-                    printf("comida\n");
                     comm_treatment(&me_ptr, me_ptr.ext_node->listen_udp_fd);  
                 }
 
-                // gets e leaves
+
                 else{
                     for(int i = 0; i<100; i++)
                     {
                     if (FD_ISSET(me_ptr.tempfd_array[i], &testfds)) 
                     {
-                            printf("comidassss %d\n", me_ptr.tempfd_array[i]);
-                            comm_treatment(&me_ptr, me_ptr.tempfd_array[i]);
+                        comm_treatment(&me_ptr, me_ptr.tempfd_array[i]);
                     }
                     }
                 }

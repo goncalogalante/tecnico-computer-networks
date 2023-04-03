@@ -12,7 +12,6 @@
 #include <sys/ioctl.h>
 
 
-
 // intr structure
 typedef struct {
     char ip[100];
@@ -44,8 +43,6 @@ typedef struct me{
     char port_nodeserver[6];
 
     char id[2]; // my id
-    char ext[2]; // extern neighborhood id
-    char bck[2]; // backup neighborhood id
 
     char my_net[3]; // net nº where I belong
 
@@ -62,7 +59,7 @@ typedef struct me{
     Conteudo conteudos[100]; // array of contents
     int num_conteudos; // actual nº of contents in the list
 
-    // intr nodes structure initialization
+    // intr nodes structure 
     NodeInfo intr_nodes[100];
     int num_nodes;
 
@@ -73,6 +70,8 @@ typedef struct me{
 
     int tempfd_array[100]; // array of tempfds
     int num_tempfds; // actual nº of tempfds in the list
+
+    char fd_temporario[03];
 
 
 } No;
@@ -105,3 +104,10 @@ void show_fds(No *new_node);
 
 int join(No *new_node, char *net, char *id);
 
+int limpeza(No *new_node, char *id);
+
+void create(char *nome_conteudo, No *new_node);
+
+void delete(char *nome_conteudo, No *new_node);
+
+void show_names(No *new_node);
