@@ -396,7 +396,6 @@ int menu(char *input, No *me_ptr)
         
          // ID verification
         char *dest = strtok(NULL," ");
-        int is_valid_get = 0;
         
         // verify if ID digited nºs is NUll or different than 3 digits
         if (dest == NULL || strlen(dest) != 2) { 
@@ -470,12 +469,17 @@ int menu(char *input, No *me_ptr)
     /*------- EXIT --------*/
     if (strcmp(first_word, "exit") == 0) {
         printf("Exiting the program...");
-        exit;
+        exit(1);
     }
 
     /*------- show fds --------*/
     if (strcmp(first_word, "sfd") == 0) {
         show_fds(me_ptr);
+    }
+
+    /*-------  limpeza gira --------*/
+    if (strcmp(first_word, "limp") == 0) {
+        //limpeza(me_ptr);
     }
 
     return 0;
@@ -507,12 +511,10 @@ int main(int argc, char *argv[]) {
     int out_fds;
     ssize_t nsize;
 
-    struct sockaddr_in listen_tcp_addr, listen_udp_addr;
+    struct sockaddr_in listen_tcp_addr;
     socklen_t addrlen;
 
     int tempfd;
-
-    
 
     // verify the number of arguments
     if (argc != 5) {
@@ -645,6 +647,7 @@ int main(int argc, char *argv[]) {
                 // receber extern 
                 else if (FD_ISSET(me_ptr.ext_node->listen_tcp_fd, &testfds)) 
                 {   
+                    strcpy(me_ptr.fd_temporario, "00");
                     if(comm_treatment(&me_ptr, me_ptr.ext_node->listen_tcp_fd) == -1);
                     {
                         printf("comida\n");

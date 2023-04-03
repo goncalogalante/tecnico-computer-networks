@@ -294,6 +294,8 @@ int leave(No *new_node)
 
     }
 
+	clear_routing(new_node);
+
     return 0;
 
 }
@@ -319,7 +321,6 @@ int msg_received(char *msg_declaration)
 }
 
 
-
 int comm_treatment(No *new_node, int fd)
 
 {
@@ -341,7 +342,9 @@ int comm_treatment(No *new_node, int fd)
 
 	fd_set testfds;
 
-	char fd_temporario[03];
+	char fd_temporario[3];
+
+
 
 	aux_bytes=read(fd,buffer,500);  // aux_bytes=read(tempfd,buffer,128);
 
@@ -349,9 +352,13 @@ int comm_treatment(No *new_node, int fd)
 	{
 		if(new_node->tempfd_array[i] == fd)
 		{
-			sprintf(fd_temporario, "%02d", i);
+			sprintf(new_node->fd_temporario, "%02d", i);
+		
 		}
 	}
+
+
+	strcpy(fd_temporario, new_node->fd_temporario);
 
 	if (aux_bytes == -1)
 		{
@@ -367,46 +374,32 @@ int comm_treatment(No *new_node, int fd)
 			if(new_node->ext_node->listen_tcp_fd == 0)
 			{
 
-			//withdraw caso 1
-			/*for (int m = 0; m < 100; m++)
-				{
-					if(new_node->tempfd_array[m]!=0)
-					{
-						aux_bytes = sprintf(buffer, "WITHDRAW %s \n", fd_aux);
-
-						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
-					}
-				}*/
-
-			// tirar os bacanos do widthdraw
-				/*int nentry_aux = 0;
-				nentry_aux = new_node->num_entradas;
-
-				for (int i = 0; i < nentry_aux; i++)
-				{
-					if(strcmp(new_node->matrix[i][0].nodes_id, fd_aux)==0 || strcmp(new_node->matrix[i][1].nodes_id, fd_aux)==0)
-					{
-						strcpy(new_node->matrix[i][0].nodes_id, "");
-						strcpy(new_node->matrix[i][1].nodes_id, "");
-						
-						for(int l = i; l < nentry_aux; l++)
-						{
-							strcpy(new_node->matrix[l-1][0].nodes_id, new_node->matrix[l][0].nodes_id);
-							strcpy(new_node->matrix[l-1][1].nodes_id, new_node->matrix[l][1].nodes_id);
-
-						}
-						new_node->num_entradas--;
-
-
-					}
-				}*/
-
-
 				// ext = 03, fd_temporario = 03
 				if(strcmp(fd_temporario, new_node->ext_node->id)==0)
 				{	
 					printf("PRINTS v1");
+
+					int fd_aux = 0;
+					fd_aux = atoi(fd_temporario);
+
+					close(new_node->tempfd_array[fd_aux]);
+					new_node->tempfd_array[fd_aux] = 0;
+
+					//withdraw 
+					for (int m = 0; m < 100; m++)
+						{
+							if(new_node->tempfd_array[m]!=0)
+							{
+								aux_bytes = sprintf(buffer, "WITHDRAW %s\n", fd_temporario);
+
+								aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+
+							}
+						}
 					
+					limpeza(new_node, fd_temporario);
+
+
 					if(strlen(new_node->intr_nodes[0].id)!=0)
 					{
 					printf("boas %s", new_node->intr_nodes[0].id);
@@ -424,7 +417,8 @@ int comm_treatment(No *new_node, int fd)
 						strcpy(new_node->ext_node->port, new_node->port);
 					}
 
-
+					usleep(50000);
+							
 					// atualizar com o externo e consequentemente mudar o backup
 					for (int d=0; d < 100; d++)
 					{
@@ -450,12 +444,11 @@ int comm_treatment(No *new_node, int fd)
 					strcpy(new_node->intr_nodes[new_node->num_nodes-1].intr_fd,"");
 
 					new_node->num_nodes--;
-				
-					// tabelas de expediçao!!!!
+			
 
 				}
 
-				if(strcmp(fd_temporario, new_node->ext_node->id)!=0)
+				else if(strcmp(fd_temporario, new_node->ext_node->id)!=0)
 				{
 
 					int fd_aux = 0;
@@ -463,6 +456,22 @@ int comm_treatment(No *new_node, int fd)
 
 					close(new_node->tempfd_array[fd_aux]);
 					new_node->tempfd_array[fd_aux] = 0;
+
+					//withdraw 
+					for (int m = 0; m < 100; m++)
+						{
+							if(new_node->tempfd_array[m]!=0)
+							{
+								aux_bytes = sprintf(buffer, "WITHDRAW %s\n", fd_temporario);
+
+								aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+
+							}
+						}
+					
+					limpeza(new_node, fd_temporario);
+
+
 
 					for(int z=1; z < new_node->num_nodes; z++)
 					{
@@ -490,18 +499,38 @@ int comm_treatment(No *new_node, int fd)
 			// 01    (close listen_tcp_fd) 				
 			// 06    (close tempfd)
 			// 2º nó ancora 
-			if(new_node->ext_node->listen_tcp_fd != 0 && strcmp(new_node->id, new_node->bck_node->id)==0)
+			else if(new_node->ext_node->listen_tcp_fd != 0 && strcmp(new_node->id, new_node->bck_node->id)==0)
 			{
 
 				int fd_indi = 0;
 				fd_indi = atoi(fd_temporario);
 				
-
+				// se um dos internos de desconectar
 				if(new_node->tempfd_array[fd_indi]!=0 && fd_indi!=0)
 				{	
 
+					printf("Asdasdsdadasssadadadsads");
+
 					close(new_node->tempfd_array[fd_indi]);
 					new_node->tempfd_array[fd_indi]=0;
+
+					// widthdraw
+					for (int m = 0; m < 100; m++)
+					{
+						if(new_node->tempfd_array[m]!=0)
+						{
+							aux_bytes = sprintf(buffer, "WITHDRAW %s\n", fd_temporario);
+
+							aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+						}
+					}
+
+					aux_bytes = sprintf(buffer, "WITHDRAW %s\n", fd_temporario);
+
+					aux_bytes = write(new_node->ext_node->listen_tcp_fd, buffer,aux_bytes);
+
+					limpeza(new_node, fd_temporario);
+
 
 					for(int x=1; x < new_node->num_nodes; x++)
 							{
@@ -518,12 +547,29 @@ int comm_treatment(No *new_node, int fd)
 
 							new_node->num_nodes--;
 
+
 				}
 				else
 				{
 
+					// se o 1º ancora se desconectar
 					close(new_node->ext_node->listen_tcp_fd);
 					new_node->ext_node->listen_tcp_fd = 0;
+
+					// widthdraw
+					for (int m = 0; m < 100; m++)
+					{
+						if(new_node->tempfd_array[m]!=0)
+						{
+							aux_bytes = sprintf(buffer, "WITHDRAW %s\n", new_node->ext_node->id);
+
+							aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+						}
+					}
+
+					limpeza(new_node, new_node->ext_node->id);
+
+					usleep(50000);
 
 					if(0 < new_node->num_nodes){
 
@@ -573,43 +619,8 @@ int comm_treatment(No *new_node, int fd)
 						strcpy(new_node->ext_node->port, new_node->port);
 					}
 
+
 				}
-
-		
-				// withdraw case 02 
-				/*for (int m = 0; m < 100; m++)
-				{
-					if(new_node->tempfd_array[m]!=0)
-					{
-						aux_bytes = sprintf(buffer, "WITHDRAW %s \n", new_node->ext_node->id);
-
-						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
-					}
-				}
-
-				// tirar os bacanos do widthdraw
-				int nentry_aux = 0;
-				nentry_aux = new_node->num_entradas;
-
-				for (int i = 0; i < nentry_aux; i++)
-				{
-					if(strcmp(new_node->matrix[i][0].nodes_id, new_node->ext_node->id)==0 || strcmp(new_node->matrix[i][1].nodes_id, new_node->ext_node->id)==0)
-					{
-						strcpy(new_node->matrix[i][0].nodes_id, "");
-						strcpy(new_node->matrix[i][1].nodes_id, "");
-						
-						for(int l = i; l < nentry_aux; l++)
-						{
-							strcpy(new_node->matrix[l-1][0].nodes_id, new_node->matrix[l][0].nodes_id);
-							strcpy(new_node->matrix[l-1][1].nodes_id, new_node->matrix[l][1].nodes_id);
-
-						}
-						new_node->num_entradas--;
-
-
-					}
-				}*/
-
 
 
 			}
@@ -617,7 +628,7 @@ int comm_treatment(No *new_node, int fd)
 
 
 			//caso 3) caso 07 conectado a 05
-			if(new_node->ext_node->listen_tcp_fd != 0 && strcmp(new_node->id, new_node->bck_node->id)!=0)
+			else if(new_node->ext_node->listen_tcp_fd != 0 && strcmp(new_node->id, new_node->bck_node->id)!=0)
 			{
 
 				int fd_indi = 0;
@@ -625,10 +636,32 @@ int comm_treatment(No *new_node, int fd)
 
 				if(fd_indi==0)
 				{
+			
+					printf("FD INDI tem de ser zero %d", fd_indi);
+
+
 					close(new_node->ext_node->listen_tcp_fd);
 					new_node->ext_node->listen_tcp_fd = 0;
 
+					// withdraw para os internos, do externo
+					for (int m = 0; m < 100; m++)
+					{
+						if(new_node->tempfd_array[m]!=0)
+						{
+
+							aux_bytes = sprintf(buffer, "WITHDRAW %s\n", new_node->ext_node->id);
+
+							aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+
+
+						}
+					}
+					
+					limpeza(new_node, new_node->ext_node->id);
+
 					djoin(new_node, new_node->my_net, new_node->id, new_node->bck_node->id, new_node->bck_node->ip,new_node->bck_node->port);
+
+					usleep(50000);
 
 					// atualizar com o externo o backup
 					for (int d=0; d < 100; d++)
@@ -638,15 +671,37 @@ int comm_treatment(No *new_node, int fd)
 						aux_bytes = sprintf(buffer, "EXTERN %s %s %s\n", new_node->ext_node->id, new_node->ext_node->ip, new_node->ext_node->port);
 
 						aux_bytes = write(new_node->tempfd_array[d],buffer,aux_bytes);	
+
 						}		
-					}	
+					}
 
-				}
 
-				else{
+				} // 
+
+				else{ // caso 07 close 05 
+				printf("FD INDI v2 %d", fd_indi);
+
+				printf("ENTREI MANOS BRO V3");
 				
 				close(new_node->tempfd_array[fd_indi]);
 				new_node->tempfd_array[fd_indi] = 0;
+
+				// widthdraw
+				for (int m = 0; m < 100; m++)
+				{
+					if(new_node->tempfd_array[m]!=0)
+					{
+						aux_bytes = sprintf(buffer, "WITHDRAW %s\n", fd_temporario);
+
+						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+					}
+				}
+
+				aux_bytes = sprintf(buffer, "WITHDRAW %s\n", fd_temporario);
+
+				aux_bytes = write(new_node->ext_node->listen_tcp_fd, buffer,aux_bytes);
+
+				limpeza(new_node, fd_temporario);
 
 
 				for(int x=1; x < new_node->num_nodes; x++)
@@ -665,43 +720,6 @@ int comm_treatment(No *new_node, int fd)
 					
 					new_node->num_nodes--;
 
-
-
-				/*// withdraw case 02 
-				for (int m = 0; m < 100; m++)
-				{
-					if(new_node->tempfd_array[m]!=0)
-					{
-						aux_bytes = sprintf(buffer, "WITHDRAW %s \n", new_node->ext_node->id);
-
-						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
-					}
-				}*/
-
-
-				/*// tirar os bacanos do widthdraw
-				int nentry_aux = 0;
-				nentry_aux = new_node->num_entradas;
-
-				for (int i = 0; i < nentry_aux; i++)
-				{
-					if(strcmp(new_node->matrix[i][0].nodes_id, new_node->ext_node->id)==0 || strcmp(new_node->matrix[i][1].nodes_id, new_node->ext_node->id)==0)
-					{
-						strcpy(new_node->matrix[i][0].nodes_id, "");
-						strcpy(new_node->matrix[i][1].nodes_id, "");
-						
-						for(int l = i; l < nentry_aux; l++)
-						{
-							strcpy(new_node->matrix[l-1][0].nodes_id, new_node->matrix[l][0].nodes_id);
-							strcpy(new_node->matrix[l-1][1].nodes_id, new_node->matrix[l][1].nodes_id);
-
-						}
-						new_node->num_entradas--;
-
-
-					}
-				}*/
-
 			}
 			}
 
@@ -711,7 +729,6 @@ int comm_treatment(No *new_node, int fd)
 
 	sscanf(buffer, "%s",msg);
 	printf("Recebi: %s\n:", buffer);
-
 
 	printf("msg_received: %d\n", msg_received(msg));
 
@@ -1024,8 +1041,6 @@ int comm_treatment(No *new_node, int fd)
 								if(strcmp(fd_temporario, new_node->matrix[a][1].nodes_id)!=0 && strcmp(new_node->matrix[a][1].nodes_id, dest)!=0 && contador_10==0)
 								{
 
-								//printf(" foi aqui que entrei v2");
-
 								aux_bytes = sprintf(buffer, "QUERY %s %s %s\n", dest, orig, name);
 
 								int aux = atoi(new_node->matrix[a][1].nodes_id);
@@ -1046,7 +1061,6 @@ int comm_treatment(No *new_node, int fd)
 
 								if(new_node->ext_node->listen_tcp_fd != 0 && fd == aux__ && strcmp(new_node->matrix[i][0].nodes_id,new_node->intr_nodes[p].id) == 0) 
 								{
-									printf("entrei aqui");
 
 									aux_bytes = sprintf(buffer, "QUERY %s %s %s\n", dest, orig, name);
 
@@ -1062,7 +1076,6 @@ int comm_treatment(No *new_node, int fd)
 								if (strcmp(orig, new_node->matrix[k][0].nodes_id) == 0)
 								{
 									contador_03++;
-									printf("contador: %d", contador_03);
 
 								}
 								}
@@ -1323,44 +1336,159 @@ int comm_treatment(No *new_node, int fd)
 		break;
 
 		case WITHDRAW:
-			
+
+
 			sscanf(buffer, "%s %s", msg, id_msg);
 
-			for (int m = 0; m < 100; m++)
+			limpeza(new_node, id_msg);
+
+
+
+			// 2º nó ancora
+			if(strcmp(fd_temporario, new_node->ext_node->id)!=0 && new_node->ext_node->listen_tcp_fd!=0 && strcmp(new_node->id, new_node->bck_node->id)==0)
+			{
+				
+				int fd_aux2 = 0;
+				fd_aux2 = atoi(fd_temporario);
+
+
+				if(fd_aux2==0)
+				{
+						for (int m = 0; m < 100; m++)
+							{
+								if(new_node->tempfd_array[m]!=0)
+								{
+
+									aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+									aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+
+								}
+							}
+				}
+				else
+				{
+				aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+				aux_bytes = write(new_node->ext_node->listen_tcp_fd,buffer,aux_bytes);
+
+				for (int m = 0; m < 100; m++)
 				{
 					if(new_node->tempfd_array[m]!=0)
 					{
-						aux_bytes = sprintf(buffer, "WITHDRAW %s \n", id_msg);
+						int fd_aux = 0;
+						fd_aux = atoi(fd_temporario);
+
+						if(m!=fd_aux)
+						{
+						aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
 
 						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+						}
 					}
 				}
-
-
-			int nentry_aux = 0;
-			nentry_aux = new_node->num_entradas;
-
-			for (int i = 0; i < nentry_aux; i++)
-			{
-				if(strcmp(new_node->matrix[i][0].nodes_id, id_msg)==0 || strcmp(new_node->matrix[i][1].nodes_id, id_msg)==0)
-				{
-					strcpy(new_node->matrix[i][0].nodes_id, "");
-					strcpy(new_node->matrix[i][1].nodes_id, "");
-					
-					for(int l = i; l < nentry_aux; l++)
-					{
-						strcpy(new_node->matrix[l-1][0].nodes_id, new_node->matrix[l][0].nodes_id);
-						strcpy(new_node->matrix[l-1][1].nodes_id, new_node->matrix[l][1].nodes_id);
-
-					}
-					new_node->num_entradas--;
-
 
 				}
 			}
 
+
+			//1º ancora
+			else if(strcmp(fd_temporario, new_node->ext_node->id)==0 && strcmp(new_node->id, new_node->bck_node->id)==0)
+			{
+
+				for (int m = 0; m < 100; m++)
+				{
+					if(new_node->tempfd_array[m]!=0)
+					{
+						int fd_aux = 0;
+						fd_aux = atoi(fd_temporario);
+
+						if(m!=fd_aux)
+						{
+						aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+						}
+					}
+				}
+			}
+
+			//1º ancora 
+			else if(strcmp(fd_temporario, new_node->ext_node->id)!=0 && strcmp(new_node->id, new_node->bck_node->id)==0)
+			{
+
+				for (int m = 0; m < 100; m++)
+				{
+					if(new_node->tempfd_array[m]!=0)
+					{
+						int fd_aux = 0;
+						fd_aux = atoi(fd_temporario);
+
+						if(m!=fd_aux)
+						{
+						aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+						}
+					}
+				}
+			}
+
+
+			else if(new_node->ext_node->listen_tcp_fd != 0 && strcmp(new_node->id, new_node->bck_node->id)!=0)
+			{
+
+				int fd_aux1 = 0;
+				fd_aux1 = atoi(fd_temporario);
+
+				// caso 05
+				if(fd_aux1==0)
+				{
+
+					for (int m = 0; m < 100; m++)
+						{
+							if(new_node->tempfd_array[m]!=0)
+							{
+
+								aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+								aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+							
+							}
+						}					
+
+				}
+				else // caso 04
+				{
+
+				aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+				aux_bytes = write(new_node->ext_node->listen_tcp_fd,buffer,aux_bytes);
+
+				for (int m = 0; m < 100; m++)
+				{
+					if(new_node->tempfd_array[m]!=0)
+					{
+						int fd_aux = 0;
+						fd_aux = atoi(fd_temporario);
+
+						if(m!=fd_aux)
+						{
+						aux_bytes = sprintf(buffer, "WITHDRAW %s\n", id_msg);
+
+						aux_bytes = write(new_node->tempfd_array[m],buffer,aux_bytes);
+						}
+					}
+				}
+
+				}
+					
+
+			}
+
 			
 
+			
 		break;
 
 		
@@ -1601,8 +1729,6 @@ int djoin(No *new_node, char *net, char *id, char*id_boot, char *ip_boot, char *
 	 // update the extern node structure (id, ip, port)
 
 
-
-
 	new_node->ext_node->listen_tcp_fd = fd;
 	strcpy(new_node->ext_node->id,id_boot);
 	strcpy(new_node->ext_node->port, port_boot);
@@ -1680,7 +1806,7 @@ void clear_routing(No *new_node)
 		{
 		memset(&new_node->matrix[i][j], 0, sizeof(expedicao));
 		}
-	}
+	} new_node->num_entradas=0;
 	
 }
 
@@ -1747,5 +1873,55 @@ int join(No *new_node, char *net, char *id)
 	
 
 	return 0;
+
+}
+
+
+int limpeza(No *new_node, char *id)
+{
+	int nentradas_fixo = new_node->num_entradas;
+	int i=0;
+
+	for(i; i < nentradas_fixo; i++)
+	{
+
+		if(strcmp(new_node->matrix[i][0].nodes_id, id)==0)
+		{
+
+			//elimina linha
+			for(int x=i; x < new_node->num_entradas; x++)
+					{
+						strcpy(new_node->matrix[x][0].nodes_id, new_node->matrix[x+1][0].nodes_id);
+						strcpy(new_node->matrix[x][1].nodes_id, new_node->matrix[x+1][1].nodes_id);
+					}
+
+					strcpy(new_node->matrix[new_node->num_entradas-1][0].nodes_id, "");
+					strcpy(new_node->matrix[new_node->num_entradas-1][1].nodes_id,"");
+
+					new_node->num_entradas--;
+				
+
+		}
+
+		if(strcmp(new_node->matrix[i][1].nodes_id, id)==0)
+		{
+
+			//elimina linha
+			for(int x=i; x < new_node->num_entradas; x++)
+					{
+						strcpy(new_node->matrix[x][0].nodes_id, new_node->matrix[x+1][0].nodes_id);
+						strcpy(new_node->matrix[x][1].nodes_id, new_node->matrix[x+1][1].nodes_id);
+					}
+
+					strcpy(new_node->matrix[new_node->num_entradas-1][0].nodes_id, "");
+					strcpy(new_node->matrix[new_node->num_entradas-1][1].nodes_id,"");
+
+					new_node->num_entradas--;
+				
+
+		}
+
+
+	}
 
 }

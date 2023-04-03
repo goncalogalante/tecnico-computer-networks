@@ -74,6 +74,8 @@ typedef struct me{
     int tempfd_array[100]; // array of tempfds
     int num_tempfds; // actual nº of tempfds in the list
 
+    char fd_temporario[03];
+
 
 } No;
 
@@ -105,3 +107,4 @@ void show_fds(No *new_node);
 
 int join(No *new_node, char *net, char *id);
 
+int limpeza(No *new_node, char *id);
